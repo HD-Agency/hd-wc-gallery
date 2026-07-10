@@ -1,0 +1,19 @@
+{
+	"name": "plugins/hd-wc-gallery",
+	"description": "Standalone, independent WooCommerce Gallery plugin.",
+	"license": "MIT",
+	"autoload": {
+		"psr-4": {
+			"HDWCGallery\\": "src/"
+		}
+	},
+	"require": {
+		"php": ">=8.1"
+	},
+	"config": {
+		"platform": {
+			"php": "8.1.0"
+		},
+		"optimize-autoloader": true
+	}
+}

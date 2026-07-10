@@ -1,0 +1,741 @@
+// resources/gallery-thumbs.scss
+// Product gallery — Swiper + Zoom lens + Thumbnails
+
+// ============================================================================
+// GALLERY CONTAINER
+// ============================================================================
+
+.hd-gallery {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	width: 100%;
+
+	// ── Below layout: main top, thumbs bottom (default) ──
+	&--below {
+		.hd-gallery__thumbs {
+			width: 100%;
+		}
+	}
+
+	// ── Above layout: thumbs top, main bottom ──
+	&--above {
+		.hd-gallery__thumbs {
+			width: 100%;
+		}
+	}
+
+	// ── Left / Right: shared vertical thumbs layout ──
+	&--left,
+	&--right {
+		.hd-gallery__thumbs {
+			width: var(--gallery-thumbs-width, 80px);
+			flex-shrink: 0;
+		}
+
+		.hd-gallery__thumbs-slider {
+			height: 100%;
+		}
+
+		.hd-gallery__main {
+			flex: 1;
+			min-width: 0;
+		}
+	}
+
+	&--left {
+		flex-direction: row;
+	}
+
+	&--right {
+		flex-direction: row-reverse;
+	}
+}
+
+// ============================================================================
+// STACKED LAYOUT (F9)
+// ============================================================================
+
+.hd-gallery--stacked {
+	.hd-gallery__stacked {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
+
+		&-item {
+			border-radius: 6px;
+			overflow: hidden;
+
+			&:first-child {
+				grid-column: 1 / -1; // First image spans full width
+			}
+
+			img {
+				display: block;
+				width: 100%;
+				height: 100%;
+				object-fit: var(--gallery-object-fit, contain);
+				object-position: center;
+			}
+
+			a {
+				display: block;
+			}
+		}
+	}
+}
+
+@media screen and (width <= 767px) {
+	.hd-gallery--stacked .hd-gallery__stacked {
+		grid-template-columns: 1fr;
+	}
+}
+
+// ============================================================================
+// MAIN SLIDER
+// ============================================================================
+
+.hd-gallery__main {
+	position: relative;
+	overflow: hidden;
+	border-radius: 8px;
+	background-color: #f8f8f8;
+
+	// Once Swiper initializes, let Swiper control height
+	&:has(.swiper-initialized) {
+		aspect-ratio: auto;
+	}
+}
+
+.hd-gallery__slider {
+	.swiper-slide {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		img {
+			display: block;
+			width: 100%;
+			height: 100%;
+			object-fit: var(--gallery-object-fit, contain);
+			object-position: center;
+		}
+	}
+}
+
+// ============================================================================
+// NAVIGATION ARROWS
+// ============================================================================
+
+// Shared nav arrow base
+%gallery-nav-btn {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	border-radius: 50%;
+	background: rgb(255 255 255 / 85%);
+	color: #333;
+	cursor: pointer;
+	box-shadow: 0 1px 4px rgb(0 0 0 / 15%);
+	transition:
+		opacity 0.2s,
+		background 0.2s,
+		transform 0.2s;
+	opacity: 0;
+	pointer-events: none;
+
+	&:hover {
+		background: #fff;
+		transform: translateY(-50%) scale(1.1);
+	}
+
+	svg {
+		display: block;
+	}
+
+	// Show on gallery hover
+	.hd-gallery:hover & {
+		opacity: 1;
+		pointer-events: auto;
+	}
+
+	// Hide when Swiper is at the edge (swiper lock)
+	&.swiper-button-disabled,
+	.hd-gallery:hover &.swiper-button-disabled {
+		opacity: 0;
+		pointer-events: none;
+	}
+}
+
+// Main slider nav
+.hd-gallery__nav {
+	@extend %gallery-nav-btn;
+
+	width: var(--gallery-nav-size, 40px);
+	height: var(--gallery-nav-size, 40px);
+
+	svg {
+		width: 20px;
+		height: 20px;
+	}
+
+	&--prev {
+		left: var(--gallery-nav-offset, 12px);
+	}
+
+	&--next {
+		right: var(--gallery-nav-offset, 12px);
+	}
+}
+
+// Thumbs nav — horizontal layout (below/above): left/right arrows
+.hd-gallery__thumbs-nav {
+	@extend %gallery-nav-btn;
+
+	width: var(--gallery-thumbs-nav-size, 28px);
+	height: var(--gallery-thumbs-nav-size, 28px);
+
+	svg {
+		width: 14px;
+		height: 14px;
+	}
+
+	&--prev {
+		left: var(--gallery-thumbs-nav-offset, -4px);
+	}
+
+	&--next {
+		right: var(--gallery-thumbs-nav-offset, -4px);
+	}
+}
+
+// Thumbs container needs relative positioning for nav arrows
+.hd-gallery__thumbs-slider {
+	position: relative;
+}
+
+// ── Vertical thumbs nav (left/right layouts): top/bottom arrows ──
+.hd-gallery--left,
+.hd-gallery--right {
+	.hd-gallery__thumbs-nav {
+		// Reset horizontal positioning from %gallery-nav-btn
+		top: auto;
+		left: 50%;
+		transform: translateX(-50%);
+
+		// Rotate ← → arrows so they become ↑ ↓
+		svg {
+			transform: rotate(90deg);
+		}
+
+		&:hover {
+			transform: translateX(-50%) scale(1.1);
+		}
+
+		&--prev {
+			inset: var(--gallery-thumbs-nav-offset, -4px) auto auto 50%;
+		}
+
+		&--next {
+			inset: auto auto var(--gallery-thumbs-nav-offset, -4px) 50%;
+		}
+	}
+}
+
+// ============================================================================
+// THUMBNAILS
+// ============================================================================
+
+.hd-gallery__thumbs {
+	overflow: hidden;
+}
+
+.hd-gallery__thumbs-slider {
+	.swiper-slide {
+		cursor: pointer;
+		border-radius: 6px;
+		border: 2px solid transparent;
+		overflow: hidden;
+		opacity: 0.6;
+		transition:
+			opacity 0.2s,
+			border-color 0.2s;
+
+		&-thumb-active {
+			opacity: 1;
+			border-color: var(--color-primary, #333);
+		}
+
+		&:hover {
+			opacity: 0.9;
+		}
+	}
+}
+
+.hd-gallery__thumb-frame {
+	display: block;
+	overflow: hidden;
+	position: relative;
+
+	img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+}
+
+// ============================================================================
+// MAGNIFYING GLASS ZOOM
+// ============================================================================
+
+.hd-gallery-zoom {
+	position: relative;
+	cursor: crosshair;
+
+	&.is-zooming {
+		cursor: none;
+	}
+
+	&__lens {
+		position: absolute;
+		border-radius: 50%;
+		border: 3px solid rgb(255 255 255 / 80%);
+		box-shadow:
+			0 0 0 1px rgb(0 0 0 / 15%),
+			0 4px 12px rgb(0 0 0 / 20%);
+		pointer-events: none;
+		z-index: 10;
+		opacity: 0;
+		transform: scale(0.8);
+		transition:
+			opacity 0.15s,
+			transform 0.15s;
+		background-repeat: no-repeat;
+		will-change: left, top, background-position;
+
+		// Crosshair indicator in lens center
+		&::after {
+			content: '+';
+			position: absolute;
+			inset: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: rgb(255 255 255 / 50%);
+			font-size: 14px;
+			pointer-events: none;
+		}
+
+		&.is-active {
+			opacity: 1;
+			transform: scale(1);
+		}
+	}
+
+	&__img {
+		display: block;
+		width: 100%;
+	}
+
+	// Full lens mode — lens fills entire image frame
+	&--full &__lens {
+		border-radius: 0;
+		border: none;
+		box-shadow: none;
+		inset: 0;
+		width: 100% !important;
+		height: 100% !important;
+
+		&::after {
+			content: none;
+		}
+	}
+}
+
+// ============================================================================
+// VIDEO SLIDES (F5 + F6)
+// ============================================================================
+
+.hd-gallery-video {
+	position: relative;
+	cursor: pointer;
+
+	&__poster {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: var(--gallery-object-fit, contain);
+	}
+
+	&__play {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: var(--gallery-play-btn-size, 64px);
+		height: var(--gallery-play-btn-size, 64px);
+		background: var(--gallery-play-btn-bg, rgb(0 0 0 / 60%));
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: #fff;
+		transition:
+			background 0.2s,
+			transform 0.2s;
+
+		&:hover {
+			background: rgb(0 0 0 / 80%);
+			transform: translate(-50%, -50%) scale(1.1);
+		}
+
+		svg {
+			width: var(--gallery-play-icon-size, 24px);
+			height: var(--gallery-play-icon-size, 24px);
+		}
+	}
+
+	&__embed {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: var(--gallery-object-fit, contain);
+		border: 0;
+	}
+
+	// When video is active, hide poster & play button
+	&.is-video-active {
+		cursor: default;
+
+		.hd-gallery-video__poster,
+		.hd-gallery-video__play {
+			display: none;
+		}
+	}
+}
+
+// Video overlay button (F6 overlay mode)
+.hd-gallery__video-overlay {
+	position: absolute;
+	bottom: var(--gallery-overlay-pos, 16px);
+	right: var(--gallery-overlay-pos, 16px);
+	z-index: 5;
+	width: var(--gallery-overlay-btn-size, 48px);
+	height: var(--gallery-overlay-btn-size, 48px);
+	background: var(--gallery-overlay-btn-bg, rgb(0 0 0 / 70%));
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #fff;
+	transition:
+		background 0.2s,
+		transform 0.2s;
+
+	&:hover {
+		background: rgb(0 0 0 / 90%);
+		transform: scale(1.1);
+	}
+
+	svg {
+		width: var(--gallery-overlay-icon-size, 20px);
+		height: var(--gallery-overlay-icon-size, 20px);
+	}
+}
+
+// Video thumbnail play icon
+.hd-gallery__thumb--video {
+	position: relative;
+}
+
+.hd-gallery__thumb-play {
+	position: absolute;
+	bottom: 2px;
+	right: 2px;
+	width: var(--gallery-thumb-play-size, 20px);
+	height: var(--gallery-thumb-play-size, 20px);
+	background: var(--gallery-thumb-play-bg, rgb(0 0 0 / 60%));
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #fff;
+	pointer-events: none;
+
+	svg {
+		width: var(--gallery-thumb-play-icon-size, 10px);
+		height: var(--gallery-thumb-play-icon-size, 10px);
+	}
+}
+
+// ============================================================================
+// SKELETON LOADING (N3)
+// ============================================================================
+
+.hd-gallery--skeleton {
+	.hd-gallery__main {
+		background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 37%, #f0f0f0 63%);
+		background-size: 400% 100%;
+		animation: hd-skeleton-pulse 1.4s ease infinite;
+	}
+
+	.hd-gallery__thumbs-slider .swiper-slide {
+		background: #f0f0f0;
+	}
+}
+
+@keyframes hd-skeleton-pulse {
+	0% {
+		background-position: 100% 50%;
+	}
+
+	100% {
+		background-position: 0 50%;
+	}
+}
+
+// ============================================================================
+// MINI GALLERY (Quick View)
+// ============================================================================
+
+.hd-gallery__mini-slider {
+	border-radius: 6px;
+	overflow: hidden;
+
+	.swiper-slide img {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+
+	.swiper-pagination {
+		bottom: 8px;
+
+		.swiper-pagination-bullet {
+			background: #fff;
+			opacity: 0.6;
+
+			&-active {
+				opacity: 1;
+			}
+		}
+	}
+}
+
+// ============================================================================
+// ADMIN VARIATION GALLERY
+// ============================================================================
+
+.hd-variation-gallery {
+	margin-top: 15px;
+
+	&__images {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		margin-bottom: 8px;
+	}
+
+	&__item {
+		position: relative;
+		width: 60px;
+		height: 60px;
+		border: 1px solid #ddd;
+		border-radius: 4px;
+		overflow: hidden;
+		cursor: move;
+
+		img {
+			display: block;
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+	}
+}
+
+.hd-variation-gallery__remove {
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 18px;
+	height: 18px;
+	border: 0;
+	background: rgb(0 0 0 / 60%);
+	color: #fff;
+	font-size: 14px;
+	line-height: 18px;
+	text-align: center;
+	cursor: pointer;
+	padding: 0;
+	border-radius: 0 0 0 4px;
+
+	&:hover {
+		background: #c00;
+	}
+}
+
+// ============================================================================
+// RESPONSIVE
+// ============================================================================
+
+@media (width <= 767px) {
+	.hd-gallery {
+		// Force horizontal on mobile for all vertical layouts
+		&--left,
+		&--right {
+			flex-direction: column;
+
+			.hd-gallery__thumbs {
+				width: 100%;
+			}
+
+			.hd-gallery__thumbs-slider {
+				height: auto;
+			}
+		}
+	}
+
+	// Hide zoom lens on touch devices
+	.hd-gallery-zoom__lens {
+		display: none !important;
+	}
+
+	// On mobile, vertical layouts collapse to horizontal — reset vertical nav arrows
+	.hd-gallery--left,
+	.hd-gallery--right {
+		.hd-gallery__thumbs-nav {
+			top: 50%;
+			transform: translateY(-50%);
+
+			&:hover {
+				transform: translateY(-50%) scale(1.1);
+			}
+
+			&--prev {
+				inset: 50% auto auto var(--gallery-thumbs-nav-offset, -4px);
+			}
+
+			&--next {
+				inset: 50% var(--gallery-thumbs-nav-offset, -4px) auto auto;
+			}
+		}
+	}
+}
+
+// ============================================================================
+// SKELETON / CLS
+// ============================================================================
+
+// Gallery skeleton before images load
+.hd-gallery__slider:not(.swiper-initialized) {
+	.swiper-slide:not(:first-child) {
+		display: none; // Show only first slide before init
+	}
+}
+
+// Thumbs: reserve space before Swiper init (horizontal default)
+.hd-gallery__thumbs-slider:not(.swiper-initialized) .swiper-wrapper {
+	display: flex;
+	flex-flow: row nowrap;
+	gap: 8px;
+	overflow: hidden;
+
+	.swiper-slide {
+		flex: 1;
+		min-width: 0;
+	}
+}
+
+// Vertical thumbs: .swiper-wrapper is the actual flex container for slides
+// Only apply column direction from tablet up — mobile stays horizontal
+@media screen and (width >= 768px) {
+	.hd-gallery--left,
+	.hd-gallery--right {
+		.hd-gallery__thumbs-slider .swiper-wrapper {
+			flex-flow: column nowrap;
+		}
+	}
+}
+
+// ============================================================================
+// PHOTOSWIPE BOTTOM THUMBNAIL STRIP
+// ============================================================================
+
+.pswp .pswp__thumbs-strip {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	z-index: 20;
+	pointer-events: auto;
+	display: flex;
+	gap: var(--pswp-thumbs-gap, 6px);
+	justify-content: center;
+	align-items: center;
+	padding: var(--pswp-thumbs-padding, 10px 16px);
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	background: var(--pswp-thumbs-bg, rgb(0 0 0 / 55%));
+	backdrop-filter: blur(12px);
+	scrollbar-width: none;
+
+	&::-webkit-scrollbar {
+		display: none;
+	}
+
+	.pswp--one-slide & {
+		display: none;
+	}
+
+	img {
+		width: auto;
+		height: var(--pswp-thumb-height, 50px);
+		object-fit: cover;
+
+		&:not([class*='as-']) {
+			aspect-ratio: 1.4;
+		}
+
+		border-radius: var(--pswp-thumb-radius, 4px);
+		opacity: 0.5;
+		cursor: pointer;
+		flex-shrink: 0;
+		pointer-events: auto;
+		position: relative;
+		border: 2px solid transparent;
+		transition:
+			opacity 0.2s ease,
+			border-color 0.2s ease,
+			transform 0.2s ease;
+
+		&:hover {
+			opacity: 0.9;
+			border-color: rgb(255 255 255 / 50%);
+			transform: scale(1.08);
+		}
+
+		&.is-active {
+			opacity: 1;
+			border-color: #fff;
+			transform: scale(1.12);
+		}
+	}
+
+	@media (width <= 640px) {
+		gap: var(--pswp-thumbs-gap, 4px);
+		padding: var(--pswp-thumbs-padding, 8px 10px);
+
+		img {
+			width: var(--pswp-thumb-width-sm, 44px);
+			height: var(--pswp-thumb-height-sm, 32px);
+		}
+	}
+}
