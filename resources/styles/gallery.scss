@@ -1,0 +1,500 @@
+// resources/styles/gallery.scss
+// Single Product Gallery & Lightbox Core Styles (Pure CSS / SCSS)
+// Designed for high customizability via CSS Custom Properties & Zero !important.
+// All spacing, sizing, and radii strictly adhere to Tailwind 4px (0.25rem) grid multiples.
+
+// ============================================================================
+// 1. DESIGN TOKENS CONTRACT
+// ============================================================================
+
+:root,
+.hd-gallery {
+	// Layout & Spacing (Tailwind 4px multiples)
+	--hd-gallery-gap: 12px;
+	--hd-gallery-radius: 8px;
+	--hd-gallery-bg: #f8fafc;
+	--hd-gallery-max-height: 600px;
+	--hd-gallery-object-fit: contain;
+	--hd-lens-size: 180px;
+
+	// Thumbnails Slider
+	--hd-gallery-thumbs-width: 80px;
+	--hd-gallery-thumbs-gap: 8px;
+	--hd-gallery-thumbs-max-height: 520px;
+	--hd-gallery-thumb-radius: 8px;
+	--hd-gallery-thumb-bg: #f1f5f9;
+	--hd-gallery-thumb-opacity: 0.55;
+	--hd-gallery-active-color: #2271b1;
+
+	// Navigation Arrows & Pagination
+	--hd-gallery-nav-size: 36px;
+	--hd-gallery-nav-offset: 12px;
+	--hd-gallery-nav-bg: rgb(255 255 255 / 85%);
+	--hd-gallery-nav-color: #1e293b;
+	--hd-gallery-nav-border: rgb(0 0 0 / 8%);
+	--hd-gallery-nav-shadow: 0 2px 8px rgb(0 0 0 / 8%);
+	--hd-gallery-pagination-bullet-bg: #94a3b8;
+
+	// Play Badges & Video
+	--hd-gallery-play-size: 52px;
+	--hd-gallery-play-bg: rgb(0 0 0 / 65%);
+	--hd-gallery-play-color: #fff;
+
+	// Lightbox Overlay Additions
+	--pswp-thumbs-bg: rgb(0 0 0 / 65%);
+	--pswp-thumbs-gap: 8px;
+	--pswp-thumbs-padding-y: 12px;
+	--pswp-thumbs-padding-x: 16px;
+	--pswp-thumb-width: 56px;
+	--pswp-thumb-height: 40px;
+	--pswp-thumb-radius: 4px;
+	--pswp-video-max-width: 960px;
+	--pswp-video-radius: 8px;
+}
+
+// ============================================================================
+// 2. GALLERY CONTAINER & 4 LAYOUT MODES
+// ============================================================================
+
+.hd-gallery {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: var(--hd-gallery-gap, 12px);
+	width: 100%;
+
+	// ── Layout: Below (Horizontal Thumbnails Below Main) ──
+	&--below {
+		.hd-gallery__thumbs {
+			width: 100%;
+		}
+	}
+
+	// ── Layout: Left / Right (Vertical Sticky Sidebars on Desktop) ──
+	&--left,
+	&--right {
+		@media (width >= 768px) {
+			flex-direction: row;
+
+			.hd-gallery__thumbs {
+				width: var(--hd-gallery-thumbs-width, 80px);
+				flex-shrink: 0;
+			}
+
+			.hd-gallery__thumbs-slider {
+				height: 100%;
+				max-height: var(--hd-gallery-thumbs-max-height, 520px);
+			}
+
+			.hd-gallery__main {
+				flex: 1;
+				min-width: 0;
+			}
+		}
+	}
+
+	&--right {
+		@media (width >= 768px) {
+			flex-direction: row-reverse;
+		}
+	}
+
+	// ── Layout: Stacked (2-Column Masonry Grid on Desktop) ──
+	&--stacked {
+		.hd-gallery__stacked {
+			display: grid;
+			grid-template-columns: 1fr;
+			gap: var(--hd-gallery-gap, 12px);
+
+			@media (width >= 768px) {
+				grid-template-columns: 1fr 1fr;
+
+				&-item:first-child {
+					grid-column: 1 / -1; // First hero image spans full 2 columns
+				}
+			}
+
+			&-item {
+				border-radius: var(--hd-gallery-radius, 8px);
+				overflow: hidden;
+				background-color: var(--hd-gallery-bg, #f8fafc);
+
+				img {
+					display: block;
+					width: 100%;
+					height: 100%;
+					object-fit: cover;
+				}
+			}
+		}
+	}
+}
+
+// ============================================================================
+// 3. MAIN IMAGE SLIDER & HOVER ZOOM LENS
+// ============================================================================
+
+.hd-gallery__main {
+	position: relative;
+	width: 100%;
+	border-radius: var(--hd-gallery-radius, 8px);
+	overflow: hidden;
+	background-color: var(--hd-gallery-bg, #f8fafc);
+}
+
+.hd-gallery__main-slider {
+	width: 100%;
+	height: 100%;
+}
+
+.hd-gallery__slide {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: auto;
+}
+
+.hd-gallery__link {
+	display: block;
+	width: 100%;
+	height: 100%;
+	cursor: zoom-in;
+	text-decoration: none;
+}
+
+.hd-gallery__figure {
+	position: relative;
+	margin: 0;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	border-radius: var(--hd-gallery-radius, 8px);
+
+	img {
+		display: block;
+		width: 100%;
+		height: auto;
+		max-height: var(--hd-gallery-max-height, 600px);
+		object-fit: var(--hd-gallery-object-fit, contain);
+		margin: 0 auto;
+		transform-origin: var(--hd-zoom-origin-x, 50%) var(--hd-zoom-origin-y, 50%);
+		transform: scale(var(--hd-zoom-scale, 1));
+		transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+		will-change: transform, transform-origin;
+	}
+
+	&.is-zooming--inner {
+		cursor: crosshair;
+
+		img {
+			// Disable CSS transition during active pointer movement for zero-latency, buttery 120fps tracking
+			transition: none;
+		}
+	}
+
+	&.is-zooming--circle {
+		cursor: crosshair;
+	}
+}
+
+.hd-gallery__lens {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: var(--hd-lens-size, 180px);
+	height: var(--hd-lens-size, 180px);
+	border-radius: 50%;
+	border: 2px solid rgb(255 255 255 / 90%);
+	box-shadow:
+		0 4px 20px rgb(0 0 0 / 25%),
+		inset 0 0 0 1px rgb(0 0 0 / 15%);
+	pointer-events: none;
+	z-index: 10;
+	opacity: 0;
+	visibility: hidden;
+	transform: translate3d(calc(var(--hd-lens-x, 0px) - (var(--hd-lens-size, 180px) / 2)), calc(var(--hd-lens-y, 0px) - (var(--hd-lens-size, 180px) / 2)), 0) scale(0.85);
+	transition:
+		opacity 0.2s ease,
+		transform 0.2s ease,
+		visibility 0.2s ease;
+	background-repeat: no-repeat;
+	background-size: var(--hd-lens-bg-w, 100%) var(--hd-lens-bg-h, 100%);
+	background-position: var(--hd-lens-bg-x, 0) var(--hd-lens-bg-y, 0);
+	will-change: transform, background-position;
+
+	&.is-active {
+		opacity: 1;
+		visibility: visible;
+		transform: translate3d(calc(var(--hd-lens-x, 0px) - (var(--hd-lens-size, 180px) / 2)), calc(var(--hd-lens-y, 0px) - (var(--hd-lens-size, 180px) / 2)), 0) scale(1);
+		transition:
+			opacity 0.2s ease,
+			visibility 0.2s ease;
+	}
+}
+
+// ============================================================================
+// 4. PLAY BADGES
+// ============================================================================
+
+.hd-gallery__play-badge {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: var(--hd-gallery-play-size, 52px);
+	height: var(--hd-gallery-play-size, 52px);
+	background: var(--hd-gallery-play-bg, rgb(0 0 0 / 65%));
+	backdrop-filter: blur(8px);
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--hd-gallery-play-color, #fff);
+	pointer-events: none;
+	box-shadow: 0 4px 16px rgb(0 0 0 / 25%);
+	transition: transform 0.2s ease;
+
+	.hd-gallery__link:hover & {
+		transform: translate(-50%, -50%) scale(1.1);
+	}
+}
+
+// ============================================================================
+// 5. NAVIGATION CONTROLS & PAGINATION
+// ============================================================================
+
+.hd-gallery__nav {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 10;
+	width: var(--hd-gallery-nav-size, 36px);
+	height: var(--hd-gallery-nav-size, 36px);
+	background: var(--hd-gallery-nav-bg, rgb(255 255 255 / 85%));
+	backdrop-filter: blur(8px);
+	border: 1px solid var(--hd-gallery-nav-border, rgb(0 0 0 / 8%));
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--hd-gallery-nav-color, #1e293b);
+	cursor: pointer;
+	box-shadow: var(--hd-gallery-nav-shadow, 0 2px 8px rgb(0 0 0 / 8%));
+	transition:
+		opacity 0.2s ease,
+		transform 0.2s ease,
+		background-color 0.2s ease,
+		box-shadow 0.2s ease;
+	opacity: 0;
+
+	.hd-gallery:hover & {
+		opacity: 1;
+	}
+
+	&:hover {
+		background: #fff;
+		transform: translateY(-50%) scale(1.08);
+		box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
+	}
+
+	&--prev {
+		left: var(--hd-gallery-nav-offset, 12px);
+	}
+
+	&--next {
+		right: var(--hd-gallery-nav-offset, 12px);
+	}
+
+	&::after {
+		display: none;
+	}
+}
+
+.hd-gallery .hd-gallery__nav.swiper-button-disabled {
+	opacity: 0;
+	pointer-events: none;
+}
+
+.hd-gallery .hd-gallery__pagination {
+	bottom: 12px;
+
+	.swiper-pagination-bullet {
+		background: var(--hd-gallery-pagination-bullet-bg, #94a3b8);
+		opacity: 0.6;
+		transition:
+			opacity 0.2s ease,
+			width 0.2s ease,
+			background-color 0.2s ease;
+
+		&-active {
+			background: var(--hd-gallery-active-color, #2271b1);
+			opacity: 1;
+			width: 20px;
+			border-radius: 4px;
+		}
+	}
+}
+
+// ============================================================================
+// 6. THUMBNAIL SLIDER
+// ============================================================================
+
+.hd-gallery__thumbs {
+	position: relative;
+	overflow: hidden;
+}
+
+.hd-gallery__thumbs-slider {
+	width: 100%;
+}
+
+.hd-gallery__thumb {
+	width: var(--hd-gallery-thumbs-width, 80px);
+	height: auto;
+	cursor: pointer;
+	border-radius: var(--hd-gallery-thumb-radius, 8px);
+	overflow: hidden;
+	border: 2px solid transparent;
+	opacity: var(--hd-gallery-thumb-opacity, 0.55);
+	transition:
+		opacity 0.2s ease,
+		border-color 0.2s ease,
+		transform 0.2s ease;
+
+	&:hover {
+		opacity: 0.85;
+	}
+
+	&.swiper-slide-thumb-active {
+		opacity: 1;
+		border-color: var(--hd-gallery-active-color, #2271b1);
+		box-shadow: 0 0 0 1px var(--hd-gallery-active-color, #2271b1);
+	}
+
+	&-figure {
+		position: relative;
+		margin: 0;
+		width: 100%;
+		aspect-ratio: 1 / 1;
+		background-color: var(--hd-gallery-thumb-bg, #f1f5f9);
+
+		img {
+			display: block;
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+	}
+
+	&-play-badge {
+		position: absolute;
+		bottom: 4px;
+		right: 4px;
+		width: 20px;
+		height: 20px;
+		background: var(--hd-gallery-play-bg, rgb(0 0 0 / 65%));
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--hd-gallery-play-color, #fff);
+	}
+}
+
+// ============================================================================
+// 7. PHOTOSWIPE V5 LIGHTBOX EXTENSIONS
+// ============================================================================
+
+.pswp .pswp__thumbs-strip {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	z-index: 20;
+	pointer-events: auto;
+	display: flex;
+	gap: var(--pswp-thumbs-gap, 8px);
+	justify-content: center;
+	align-items: center;
+	padding: var(--pswp-thumbs-padding-y, 12px) var(--pswp-thumbs-padding-x, 16px);
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	background: var(--pswp-thumbs-bg, rgb(0 0 0 / 65%));
+	backdrop-filter: blur(12px);
+	scrollbar-width: none;
+
+	&::-webkit-scrollbar {
+		display: none;
+	}
+
+	.pswp--one-slide & {
+		display: none;
+	}
+
+	.pswp__thumb-figure {
+		position: relative;
+		flex-shrink: 0;
+		width: var(--pswp-thumb-width, 56px);
+		height: var(--pswp-thumb-height, 40px);
+		cursor: pointer;
+		border-radius: var(--pswp-thumb-radius, 4px);
+		overflow: hidden;
+		border: 2px solid transparent;
+		opacity: 0.5;
+		transition:
+			opacity 0.2s ease,
+			border-color 0.2s ease,
+			transform 0.2s ease;
+		margin: 0;
+
+		img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+
+		&:hover {
+			opacity: 0.8;
+		}
+
+		&.is-active {
+			opacity: 1;
+			border-color: #fff;
+			transform: scale(1.06);
+		}
+
+		.pswp__thumb-play-icon {
+			position: absolute;
+			bottom: 4px;
+			right: 4px;
+			width: 16px;
+			height: 16px;
+			background: rgb(0 0 0 / 70%);
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: #fff;
+		}
+	}
+}
+
+.pswp__video-container {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	iframe,
+	video {
+		width: 100%;
+		max-width: var(--pswp-video-max-width, 960px);
+		aspect-ratio: 16 / 9;
+		max-height: 80vh;
+		border-radius: var(--pswp-video-radius, 8px);
+		background: #000;
+	}
+}
